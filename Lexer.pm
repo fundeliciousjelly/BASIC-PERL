@@ -2,17 +2,20 @@ package Lexer;
 
 use warnings;
 use strict;
+use Data::Dumper;
 
 use TokenType;
 
 my $token = undef;
 my $buffer;
+my @string;
 my $position = 0;
 my $column = 1;
 
 sub Tokenize
 {
 	$buffer = shift;
+	@string = split //, $buffer;
 	while (1)
 	{
 		my $tok = GetToken();
@@ -29,13 +32,13 @@ sub HasEnded
 
 sub PeekCharacter
 {
-	return HasEnded() ? "\0" : substr $buffer, $position - 1, 1;
+	return HasEnded() ? "\0" : $string[$position];
 }
 
 sub NextCharacter
 {
 	my $current = PeekCharacter;
-	if ($current =~ /\s/)
+	if ($current eq "\n")
 	{
 		push $token->@*, 
 			["", 
@@ -51,13 +54,13 @@ sub NextCharacter
 	{
 		$column++;
 	}
-
-	return substr $buffer, $position++ - 1, 1;
+	
+	return $string[$position++];
 }
 
 sub SkipWhitespace
 {
-	while (substr $buffer, $position - 1, 1 =~ /\s+/)
+	while ($string[$position] =~ /\s+/)
 	{
 		NextCharacter;
 	}
@@ -66,14 +69,14 @@ sub SkipWhitespace
 sub GetToken
 {
 	return ["", $TokenType::EOF, $column] if HasEnded();
-
+	
+	SkipWhitespace;
 	my $current = PeekCharacter;
 	return GetKeywordOrIdentifier($position, $column) if $current =~ /[A-Za-z]+/;
 	return GetNumber($position, $column) if $current =~ /\d+/;
 	return GetSymbol($column) if $current eq grep $current, keys %TokenType::symbols;
 	return GetString($position, $column) if $current eq '"';
-
-	NextCharacter;	
+	NextCharacter;
 	return ["", $TokenType::UNKNOWN, $column];
 }
 
@@ -84,10 +87,10 @@ sub GetKeywordOrIdentifier
 	{
 		NextCharacter;
 	}
-	my $current = substr $buffer, $Currentposition, $Currentposition - $Currentposition;
+	my $current = substr $buffer, $Currentposition, $position - $Currentposition;
 	return [$current,
-		$TokenType::keywords{uc $buffer},
-		$column];
+		$TokenType::keywords{uc $current},
+		$Currentcolumn];
 }
 
 sub GetNumber
@@ -98,23 +101,23 @@ sub GetNumber
 		NextCharacter;
 	}
 	my $current = substr $buffer, $Currentposition, $position - $Currentposition;
-	return [$current, $TokenType::NUMBER, $column];
+	return [$current, $TokenType::NUMBER, $Currentcolumn];
 }
 
 sub GetString
 {
 	my ($Currentposition, $Currentcolumn) = @_;
 	do { NextCharacter; } while (PeekCharacter() ne '"');
-	my $current = substr $buffer, $position + 1, $Currentposition - $position;
+	my $current = substr $buffer, $Currentposition + 1, $position - $Currentposition - 1;
 	NextCharacter;
-	return [$current, $TokenType::STRING, $column];
+	return [$current, $TokenType::STRING, $Currentcolumn];
 }
 
 sub GetSymbol
 {
-	my $column = shift;
+	my $Currentcolumn = shift;
 	my $current = NextCharacter;
-	return [$current, $TokenType::symbols->{$current}, $column];
+	return [$current, $TokenType::symbols->{$current}, $Currentcolumn];
 }
 
 sub Stringify
@@ -125,7 +128,7 @@ sub Stringify
 	{
 		if ($tok->[0] ne $TokenType::EOF)
 		{
-			$current = $current . "value: $tok->[1], type: $tok->[0], location: $tok->[2]\n";
+			$current = $current . "value: $tok->[0], type: $tok->[1], column: $tok->[2]\n";
 		}
 	}
 	return $current;
