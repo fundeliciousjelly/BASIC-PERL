@@ -2,7 +2,6 @@ package Lexer;
 
 use warnings;
 use strict;
-use Data::Dumper;
 
 use TokenType;
 
