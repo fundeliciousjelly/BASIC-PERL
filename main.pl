@@ -20,7 +20,7 @@ if (uc $ARGV[0] eq 'BASIC')
 		while (1)
 		{
 			print "READY.\n\n";
-			my $buffer = "";
+			my $buffer = '';
 			while (my $line = readline STDIN)
 			{
 				chomp $line;
@@ -28,8 +28,9 @@ if (uc $ARGV[0] eq 'BASIC')
 				die if uc $line eq 'EXIT';
 				$buffer = $buffer . $line . "\n";
 			}
+			chomp $buffer;
+			print "\n\n";
 			my $lexer = Lexer::Tokenize $buffer;
-			print "done";
 			print Lexer::Stringify $lexer;
 		}
 	}
