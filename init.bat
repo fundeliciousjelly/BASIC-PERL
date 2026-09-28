@@ -1,1 +1,0 @@
-git remote add origin https://github.com/fundeliciousjelly/BASIC-PERL.git
